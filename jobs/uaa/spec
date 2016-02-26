@@ -5,15 +5,15 @@ description: "The UAA is the identity management service for Cloud Foundry. It's
 
 templates:
   uaa_ctl.erb: bin/uaa_ctl
-  install_crt.erb: bin/install_crt
+  install_crt: bin/install_crt
   dns_health_check.erb: bin/dns_health_check
-  install_uaa_crt.erb: bin/install_uaa_crt
+  install_uaa_crt: bin/install_uaa_crt
 
   uaa.yml.erb: config/uaa.yml
   newrelic.yml.erb: config/newrelic.yml
-  varz.yml.erb: config/varz.yml
+  varz.yml: config/varz.yml
   log4j.properties.erb: config/log4j.properties
-  varz.log4j.properties.erb: config/varz.log4j.properties
+  varz.log4j.properties: config/varz.log4j.properties
   tomcat.logging.properties: config/tomcat/logging.properties
   tomcat.server.xml.erb: config/tomcat/server.xml
   ldap.crt.erb: config/ldap.crt
@@ -148,9 +148,18 @@ properties:
       -----END RSA PRIVATE KEY-----
 
   #Branding/Customization
-  login.brand:
-    description: "The brand to use for the reset password emails, available values are oss and pivotal"
-    default: oss
+  login.branding.company_name:
+    description: This name is used on the UAA Pages and in account management related communication in UAA
+  login.branding.product_logo:
+    description: This is a base64 encoded PNG image which will be used as the logo on all UAA pages like Login, Sign Up etc.
+  login.branding.square_logo:
+    description: This is a base64 encoded PNG image which will be used as the favicon for the UAA pages
+  login.branding.footer_legal_text:
+    description: This text appears on the footer of all UAA pages
+  login.branding.footer_links:
+    description: These links appear on the footer of all UAA pages. You may choose to add multiple urls for things like Support, Terms of Service etc.
+    example:
+      linkDisplayName: linkDisplayUrl
   login.asset_base_url:
     description: "Base url for static assets, allows custom styling of the login server.  Use '/resources/pivotal' for Pivotal style."
     default: /resources/oss
@@ -162,10 +171,14 @@ properties:
   login.links.signup:
     description: URL for requesting to signup/register for an account
     default: '/create_account'
+  login.home_redirect:
+    description: URL for configuring a custom home page
   login.tiles:
     description: "A list of links to other services to show on the landing page after log in."
   login.invitations_enabled:
     description: "Allows users to send invitations to email addresses outside the system and invite them to create an account. Disabled by default."
+  login.self_service_links_enabled:
+    description: "Enable self-service account creation and password resets links."
   login.analytics.code:
     description: "Google analytics code. If Google Analytics is desired set both login.analytics.code and login.analytics.domain"
   login.analytics.domain:
@@ -231,6 +244,9 @@ properties:
         authorities: test_resource.test_action
         scope: test_resource.test_action
         redirect-uri: http://login.example.com
+        app-launch-url: http://myloginpage.com
+        show-on-homepage: true
+        app-icon: iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAMAAAAoLQ9TAAAAD1BMVEWZttQvMDEoKisqKywAAAApvvoVAAAAGElEQVQYlWNgYUQBLAxMDCiAeXgLoHsfAD03AHOyfqy1AAAAAElFTkSuQmCC
   uaa.admin.client_secret:
     description: "Secret of the admin client - a client named admin with uaa.admin as an authority"
   uaa.login.client_secret:
@@ -241,7 +257,7 @@ properties:
       - login
       - support-signon
 
-  # Security policies
+  # Security policies (for the UAA zone)
   uaa.authentication.policy.lockoutAfterFailures:
     description: "Number of allowed failures before account is locked"
     default: 5
@@ -327,12 +343,6 @@ properties:
           AnkyB06wFZ02sBLB7hko42LIsVEOyTuUBird/3vlyHFKytG7UEt60Fl88SbAEfsU
           JN1i1aSU
           -----END PUBLIC KEY-----
-  uaa.jwt.policy.global.accessTokenValiditySeconds:
-    default: 43200
-    description: "The global access token validity for all zones if nothing is configured on the client"
-  uaa.jwt.policy.global.refreshTokenValiditySeconds:
-    default: 2592000
-    description: "The global refresh token validity for all zones if nothing is configured on the client"
   uaa.jwt.signing_key:
     description: "The key used to sign the JWT-based OAuth2 tokens"
   uaa.jwt.verification_key:
@@ -341,6 +351,46 @@ properties:
     description: "List of claims to exclude from the JWT-based OAuth2 tokens"
     example:
      - authorities
+
+  # Global security policies (for all zones)
+  uaa.authentication.policy.global.lockoutAfterFailures:
+    description: "Number of allowed failures before account is locked"
+    default: 5
+  uaa.authentication.policy.global.countFailuresWithinSeconds:
+    description: "Number of seconds in which lockoutAfterFailures failures must occur in order for account to be locked"
+    default: 3600
+  uaa.authentication.policy.global.lockoutPeriodSeconds:
+    description: "Number of seconds to lock out an account when lockoutAfterFailures failures is exceeded"
+    default: 300
+  uaa.password.policy.global.minLength:
+    description: "Minimum number of characters required for password to be considered valid"
+    default: 0
+  uaa.password.policy.global.maxLength:
+    description: "Maximum number of characters required for password to be considered valid"
+    default: 255
+  uaa.password.policy.global.requireUpperCaseCharacter:
+    description: "Minimum number of uppercase characters required for password to be considered valid"
+    default: 0
+  uaa.password.policy.global.requireLowerCaseCharacter:
+    description: "Minimum number of lowercase characters required for password to be considered valid"
+    default: 0
+  uaa.password.policy.global.requireDigit:
+    description: "Minimum number of digits required for password to be considered valid"
+    default: 0
+  uaa.password.policy.global.requireSpecialCharacter:
+    description: "Minimum number of special characters required for password to be considered valid"
+    default: 0
+  uaa.password.policy.global.expirePasswordInMonths:
+    description: "Number of months after which current password expires"
+    default: 0
+  uaa.jwt.policy.global.accessTokenValiditySeconds:
+    default: 43200
+    description: "The global access token validity for all zones if nothing is configured on the client"
+  uaa.jwt.policy.global.refreshTokenValiditySeconds:
+    default: 2592000
+    description: "The global refresh token validity for all zones if nothing is configured on the client"
+
+  # Scim properties
   uaa.scim.user.override:
     description: "If true override users defined in uaa.scim.users found in the database."
     default: true
@@ -348,14 +398,42 @@ properties:
     description: "Enables the endpoint `/ids/Users` that allows consumers to translate user ids to name"
     default: true
   uaa.scim.users:
-    description: "A list of users to be bootstrapped with default authority. Each entry has the following format: username|password|email|firstName|lastName"
+    description: |
+      A list of users to be bootstrapped with authorities.
+      Each entry supports the following format:
+        Short Pipe: username|password|comma,separated,groups
+        Long Pipe: username|password|email|firstName|lastName|comma,separated,groups|origin
+        Short OpenStruct:
+          - name: username
+            password: password
+            groups:
+              - group1
+              - group2
+        Long OpenStruct:
+          - name: username
+            password: password
+            groups:
+              - group1
+              - group2
+            firstName: first name
+            lastName: lastName
+            email: email
+            origin: origin-value - most commonly uaa
     example:
       - marissa|koala|marissa@test.org|Marissa|Bloggs
   uaa.scim.external_groups:
     description: "A list of external group mappings. Pipe delimited. A value may look as '- internal.read|cn=developers,ou=scopes,dc=test,dc=com'"
   uaa.scim.groups:
-    description: Comma separated list of groups that should be added to the UAA db, but not assigned to a user by default.
-
+    description: |
+      Contains a hash of group names and their descriptions. These groups will be added to the UAA database for the default zone but not associated with any user.
+      Example:
+        uaa:
+          scim:
+            groups:
+              my-test-group: 'My test group description'
+              another-group: 'Another group description'
+      Deprecated format(still supported, but may be removed in the future): 
+      Comma separated list of groups that should be added to the UAA db, but not assigned to a user by default.
   # Database
   uaadb.address:
     description: "The UAA database IP address"
@@ -431,6 +509,14 @@ properties:
   uaa.ldap.mailSubstituteOverridesLdap:
     description: "Set to true if you wish to override an LDAP user email address with a generated one"
     default: false
+  uaa.ldap.referral:
+    description: |
+      Configures the UAA LDAP referral behavior. The following values are possible:
+      - follow -> Referrals are followed
+      - ignore -> Referrals are ignored and the partial result is returned
+      - throw  -> An error is thrown and the authentication is aborted
+      Reference: http://docs.oracle.com/javase/jndi/tutorial/ldap/referral/jndi.html
+    default: follow
   uaa.ldap.groups.profile_type:
     description: "What type of group integration should be used. Values are: 'no-groups', 'groups-as-scopes', 'groups-map-to-scopes'"
     default: "no-groups"
@@ -501,9 +587,15 @@ properties:
 
   # Saml
   login.saml.entityid:
-    description: "This is used as the SAML Service Provider Entity ID"
+    description: "This is used as the SAML Service Provider Entity ID. Each "
   login.saml.entity_base_url:
-    description: "The URL for which SAML identity providers will post assertions to. If set it overrides the default. This URL should NOT have the schema (http:// or https:// prefix in it) instead just the hostname. The schema is derived by login.protocol property. The default value is #{protocol}://#{properties.uaa.url} if uaa.url is set."
+    description: |
+      The URL for which SAML identity providers will post assertions to.
+      If set it overrides the default.
+      This URL should NOT have the schema (http:// or https:// prefix in it) instead just the hostname.
+      The schema is derived by #{login.protocol} property.
+      The default value is #{uaa.url}.replaceFirst('uaa','login'), typically login.example.com
+      The UAA will display this link in the cf --sso call if there is a SAML provider enabled.
   login.saml.serviceProviderKey:
     description: "Private key for the service provider certificate."
     example: |
@@ -578,6 +670,9 @@ properties:
   login.saml.signRequest:
     description: "Global property to sign Local/SP requests"
     default: true
+  login.saml.wantAssertionSigned:
+    description: "Global property to request that external IDPs sign their SAML assertion before sending them to the UAA"
+    default: false
   login.saml.idpMetadataURL:
     description: "Deprecated. Use login.saml.providers list objects"
   login.saml.idp_metadata_file:
@@ -595,3 +690,10 @@ properties:
     description: "Deprecated. Use login.saml.providers list objects"
   login.entity_id:
     description: "Deprecated. Use login.saml.entityid"
+  login.url:
+    description: |
+      Set if you have an external login server.
+      The UAA uses this link on by its email service to create links
+      The UAA uses this as a base domain for internal hostnames so that subdomain can be detected
+      This defaults to the uaa.url property, and if not set, to login.<domain>
+    default: ~
