@@ -12,10 +12,10 @@ if [ `uname` = "Darwin" ]; then
   tar zxvf ../openjdk/openjdk-1.8.0_65-x86_64-mountainlion.tar.gz --exclude="._*"
   export JAVA_HOME=${BUILD_DIR}/java
 elif [ `uname` = "Linux" ]; then
-  mkdir -p java
+  mkdir java
   cd java
-  tar zxvf ../java/jdk-8u31-linux-x64.tar.gz
-  export JAVA_HOME=${BUILD_DIR}/java/jdk1.8.0_31
+  tar zxvf ../openjdk/openjdk-1.8.0_65-x86_64-trusty.tar.gz
+  export JAVA_HOME=${BUILD_DIR}/java
 else
   if [ ! -d $JAVA_HOME ]; then
     echo "JAVA_HOME properly set is required for non Linux/Darwin builds."
@@ -38,5 +38,4 @@ cd ${BUILD_DIR}
 rm -rf java
 rm -rf openjdk/openjdk-1.8.0_65-x86_64-mountainlion.tar.gz
 rm -rf openjdk/openjdk-1.8.0_65-x86_64-trusty.tar.gz
-rm -rf /java
 ${BUILD_DIR}/uaa/.clean-cf-release-build
